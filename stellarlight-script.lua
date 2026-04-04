@@ -14,44 +14,74 @@ for _,v in pairs(LocalPlayer.PlayerGui:GetChildren())do
 if v.Name=="Stellarlight"then v:Destroy()end
 end
 
-local Screen=Instance.new("ScreenGui")
-Screen.Name="Stellarlight"
-Screen.Parent=CoreGui
-Screen.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
-Screen.ResetOnSpawn=false
+local sg=Instance.new("ScreenGui")
+sg.Name="Stellarlight"
+sg.Parent=CoreGui
+sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+sg.ResetOnSpawn=false
+
+local cover=Instance.new("Frame")
+cover.Size=UDim2.new(1,0,1,0)
+cover.BackgroundColor3=Color3.new(0.06,0.06,0.06)
+cover.BackgroundTransparency=0
+cover.Parent=sg
+cover.ZIndex=9999
+
+local logo=Instance.new("Frame")
+logo.Size=UDim2.new(0,90,0,90)
+logo.Position=UDim2.new(0.5,-45,0.5,-45)
+logo.BackgroundColor3=Color3.new(0.1,0.1,0.1)
+logo.Rotation=15
+logo.Parent=cover
+logo.ZIndex=9999
+
+local logot=Instance.new("TextLabel")
+logot.Size=UDim2.new(1,0,1,0)
+logot.BackgroundTransparency=1
+logot.Text="ST"
+logot.TextColor3=Color3.new(1,1,1)
+logot.TextScaled=true
+logot.Font=Enum.Font.GothamBold
+logot.Parent=logo
+
+task.wait(1)
+
+for i=1,50 do
+cover.BackgroundTransparency+=0.02
+logo.BackgroundTransparency+=0.02
+logot.TextTransparency+=0.02
+task.wait(0.01)
+end
+cover:Destroy()
 
 local Float=Instance.new("Frame")
 Float.Name="Float"
-Float.Parent=Screen
+Float.Parent=sg
 Float.Size=UDim2.new(0,70,0,70)
 Float.Position=UDim2.new(0.02,0,0.04,0)
 Float.BackgroundColor3=Color3.new(0.08,0.08,0.08)
+Float.Rotation=15
 Float.Draggable=true
 Float.Active=true
 
-local Corner1=Instance.new("UICorner")
-Corner1.CornerRadius=UDim.new(1,0)
-Corner1.Parent=Float
-
-local Label=Instance.new("TextLabel")
-Label.Parent=Float
-Label.Size=UDim2.new(1,0,1,0)
-Label.BackgroundTransparency=1
-Label.Text="ST"
-Label.TextColor3=Color3.new(1,1,1)
-Label.TextScaled=true
-Label.Font=Enum.Font.GothamBold
+local flab=Instance.new("TextLabel")
+flab.Size=UDim2.new(1,0,1,0)
+flab.BackgroundTransparency=1
+flab.Text="ST"
+flab.TextColor3=Color3.new(1,1,1)
+flab.TextScaled=true
+flab.Font=Enum.Font.GothamBold
+flab.Parent=Float
 
 local Main=Instance.new("Frame")
 Main.Name="Main"
-Main.Parent=Screen
+Main.Parent=sg
 Main.Size=UDim2.new(0,600,0,420)
 Main.Position=UDim2.new(0.5,-300,0.5,-210)
 Main.BackgroundColor3=Color3.new(0.07,0.07,0.07)
 Main.Draggable=true
 Main.Active=true
 Main.Visible=false
-
 local Corner2=Instance.new("UICorner")
 Corner2.CornerRadius=UDim.new(0,8)
 Corner2.Parent=Main
@@ -270,96 +300,18 @@ Float.MouseButton1Click:Connect(function()
 Main.Visible=not Main.Visible
 end)
 
-local fly=false
 local flyspd=60
 local bv,bg
-local infjump=false
-local noclip=false
-local spd=false
-local esp=false
-local name,health,dist,box,ray,itemesp=false,false,false,false,false,false
+
 RunService.RenderStepped:Connect(function()
 local char=LocalPlayer.Character
 if not char then return end
 local root=char:FindFirstChild("HumanoidRootPart")
 local hum=char:FindFirstChild("Humanoid")
 if not root or not hum then return end
-
-if fly then
-hum.PlatformStand=true
-if not bv then
-bv=Instance.new("BodyVelocity")
-bv.Parent=root
-bv.MaxForce=Vector3.new(1e8,1e8,1e8)
-end
-if not bg then
-bg=Instance.new("BodyGyro")
-bg.Parent=root
-bg.MaxTorque=Vector3.new(1e8,1e8,1e8)
-end
-bv.Velocity=Vector3.new(0,0,0)
-if UserInputService:IsKeyDown(Enum.KeyCode.W)then bv.Velocity=root.CFrame.LookVector*flyspd end
-if UserInputService:IsKeyDown(Enum.KeyCode.S)then bv.Velocity=-root.CFrame.LookVector*flyspd end
-if UserInputService:IsKeyDown(Enum.KeyCode.A)then bv.Velocity=-root.CFrame.RightVector*flyspd end
-if UserInputService:IsKeyDown(Enum.KeyCode.D)then bv.Velocity=root.CFrame.RightVector*flyspd end
-if UserInputService:IsKeyDown(Enum.KeyCode.Space)then bv.Velocity=Vector3.new(0,flyspd,0)end
-if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)then bv.Velocity=Vector3.new(0,-flyspd,0)end
-bg.CFrame=CFrame.new(root.Position,root.Position+Workspace.CurrentCamera.CFrame.LookVector)
-else
-hum.PlatformStand=false
-if bv then bv:Destroy()bv=nil end
-if bg then bg:Destroy()bg=nil end
-end
-
-if spd then hum.WalkSpeed=32 else hum.WalkSpeed=16 end
-if infjump then hum.JumpPower=100 hum.JumpHeight=100 else hum.JumpPower=50 hum.JumpHeight=7.2 end
-
-if noclip then
-for _,v in pairs(char:GetDescendants())do
-if v:IsA("BasePart")then v.CanCollide=false end
-end
-else
-for _,v in pairs(char:GetDescendants())do
-if v:IsA("BasePart")then v.CanCollide=true end
-end
-end
-
-if esp then
-for _,plr in pairs(Players:GetPlayers())do
-if plr==LocalPlayer or not plr.Character then continue end
-local hrp=plr.Character:FindFirstChild("HumanoidRootPart")
-local h=plr.Character:FindFirstChild("Humanoid")
-if not hrp or not h then continue end
-if not hrp:FindFirstChild("ST_ESP")then
-local bgui=Instance.new("BillboardGui")
-bgui.Name="ST_ESP"
-bgui.Parent=hrp
-bgui.Size=UDim2.new(0,200,0,60)
-bgui.StudsOffset=Vector3.new(0,3.5,0)
-bgui.AlwaysOnTop=true
-local t=Instance.new("TextLabel")
-t.Parent=bgui
-t.Size=UDim2.new(1,0,1,0)
-t.BackgroundTransparency=1
-t.TextColor3=Color3.new(1,1,1)
-t.TextScaled=true
-t.Font=Enum.Font.GothamBold
-end
-local t=hrp.ST_ESP.TextLabel
-local txt=""
-if name then txt=txt..plr.Name end
-if health then txt=txt.." ["..math.floor(h.Health).."]" end
-if dist then txt=txt.." "..math.floor((hrp.Position-root.Position).Magnitude).."m" end
-t.Text=txt
-end
-else
-for _,v in pairs(Workspace:GetDescendants())do
-if v.Name=="ST_ESP"then v:Destroy()end
-end
-end
 end)
 
-for _,v in pairs(Screen:GetDescendants())do
+for _,v in pairs(sg:GetDescendants())do
 if v:IsA("GuiObject")then
 v.Draggable=true
 v.Active=true
