@@ -20,20 +20,12 @@ sg.Parent=CoreGui
 sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 sg.ResetOnSpawn=false
 
-local cover=Instance.new("Frame")
-cover.Size=UDim2.new(1,0,1,0)
-cover.BackgroundColor3=Color3.new(0.06,0.06,0.06)
-cover.BackgroundTransparency=0
-cover.Parent=sg
-cover.ZIndex=9999
-
 local logo=Instance.new("Frame")
-logo.Size=UDim2.new(0,90,0,90)
-logo.Position=UDim2.new(0.5,-45,0.5,-45)
+logo.Size=UDim2.new(0,100,0,100)
+logo.Position=UDim2.new(0.5,-50,0.5,-50)
 logo.BackgroundColor3=Color3.new(0.1,0.1,0.1)
 logo.Rotation=15
-logo.Parent=cover
-logo.ZIndex=9999
+logo.Parent=sg
 
 local logot=Instance.new("TextLabel")
 logot.Size=UDim2.new(1,0,1,0)
@@ -44,16 +36,66 @@ logot.TextScaled=true
 logot.Font=Enum.Font.GothamBold
 logot.Parent=logo
 
-task.wait(1)
+local tip=Instance.new("Frame")
+tip.Size=UDim2.new(0,300,0,100)
+tip.Position=UDim2.new(0.9,-300,0.05,0)
+tip.BackgroundColor3=Color3.new(0.08,0.08,0.08)
+tip.Parent=sg
+local cr=Instance.new("UICorner")
+cr.CornerRadius=UDim.new(0,10)
+cr.Parent=tip
 
-for i=1,50 do
-cover.BackgroundTransparency+=0.02
-logo.BackgroundTransparency+=0.02
-logot.TextTransparency+=0.02
-task.wait(0.01)
+local text1=Instance.new("TextLabel")
+text1.Size=UDim2.new(1,0,0,40)
+text1.Position=UDim2.new(0,0,0,5)
+text1.BackgroundTransparency=1
+text1.Text="已成功启动 Stellarlight-script"
+text1.TextColor3=Color3.new(1,1,1)
+text1.TextScaled=true
+text1.Font=Enum.Font.GothamBold
+text1.Parent=tip
+
+local text2=Instance.new("TextLabel")
+text2.Size=UDim2.new(1,0,0,20)
+text2.Position=UDim2.new(0,0,0,40)
+text2.BackgroundTransparency=1
+text2.Text="感谢您的使用"
+text2.TextColor3=Color3.new(0.8,0.8,0.8)
+text2.TextSize=14
+text2.Parent=tip
+
+local barback=Instance.new("Frame")
+barback.Size=UDim2.new(0.9,0,0,8)
+barback.Position=UDim2.new(0.05,0,0.7,0)
+barback.BackgroundColor3=Color3.new(0.2,0.2,0.2)
+barback.Parent=tip
+local cr2=Instance.new("UICorner")
+cr2.CornerRadius=UDim.new(0,4)
+cr2.Parent=barback
+
+local bar=Instance.new("Frame")
+bar.Size=UDim2.new(1,0,1,0)
+bar.BackgroundColor3=Color3.new(1,0,0)
+bar.Parent=barback
+local cr3=Instance.new("UICorner")
+cr3.CornerRadius=UDim.new(0,4)
+cr3.Parent=bar
+
+TweenService:Create(logo,TweenInfo.new(1),{
+Size=UDim2.new(0,0,0,0),
+Position=UDim2.new(0.5,0,0.5,0),
+Rotation=0
+}):Play()
+
+task.wait(0.3)
+
+for i=1,40 do
+bar.Size=UDim2.new(1-(i/40),0,1,0)
+task.wait(0.02)
 end
-cover:Destroy()
 
+tip:Destroy()
+logo:Destroy()
 local Float=Instance.new("Frame")
 Float.Name="Float"
 Float.Parent=sg
@@ -82,6 +124,7 @@ Main.BackgroundColor3=Color3.new(0.07,0.07,0.07)
 Main.Draggable=true
 Main.Active=true
 Main.Visible=false
+
 local Corner2=Instance.new("UICorner")
 Corner2.CornerRadius=UDim.new(0,8)
 Corner2.Parent=Main
@@ -121,7 +164,6 @@ Right.ScrollBarThickness=3
 local List=Instance.new("UIListLayout")
 List.Parent=Right
 List.Padding=UDim.new(0,6)
-
 local function Tab(txt,callback)
 local B=Instance.new("TextButton")
 B.Size=UDim2.new(0.94,0,0,34)
@@ -139,6 +181,7 @@ BC.Parent=B
 B.MouseButton1Click:Connect(callback)
 end
 
+local toggles={}
 local function Toggle(name,default)
 local val=default
 local F=Instance.new("Frame")
@@ -177,6 +220,7 @@ T.MouseButton1Click:Connect(function()
 val=not val
 TweenService:Create(C,TweenInfo.new(0.15),{Position=val and UDim2.new(0.5,0,0.5,-10) or UDim2.new(0,4,0.5,-10)}):Play()
 TweenService:Create(T,TweenInfo.new(0.15),{BackgroundColor3=val and Color3.new(0.22,0.72,0.22) or Color3.new(0.18,0.18,0.18)}):Play()
+toggles[name]=val
 end)
 return function()return val end
 end
@@ -186,6 +230,7 @@ for _,c in pairs(Right:GetChildren())do
 if c:IsA("Frame")then c:Destroy()end
 end
 end
+
 Tab("玩家功能",function()
 ClearUI()
 Toggle("ESP 全局透视",false)
@@ -218,7 +263,6 @@ Toggle("攻击范围扩大",false)
 Toggle("无视防御",false)
 Toggle("攻击速度拉满",false)
 end)
-
 Tab("世界功能",function()
 ClearUI()
 Toggle("显宝箱",false)
@@ -271,6 +315,7 @@ Toggle("暗色模式",true)
 Toggle("彩虹UI",false)
 Toggle("极简模式",false)
 end)
+
 local function Btn(txt,func)
 local b=Instance.new("TextButton")
 b.Size=UDim2.new(0.98,0,0,36)
@@ -309,6 +354,45 @@ if not char then return end
 local root=char:FindFirstChild("HumanoidRootPart")
 local hum=char:FindFirstChild("Humanoid")
 if not root or not hum then return end
+
+if toggles["飞行"] then
+hum.PlatformStand=true
+if not bv then
+bv=Instance.new("BodyVelocity")
+bv.Parent=root
+bv.MaxForce=Vector3.new(1e8,1e8,1e8)
+end
+if not bg then
+bg=Instance.new("BodyGyro")
+bg.Parent=root
+bg.MaxTorque=Vector3.new(1e8,1e8,1e8)
+end
+bv.Velocity=Vector3.new(0,0,0)
+if UserInputService:IsKeyDown(Enum.KeyCode.W)then bv.Velocity=root.CFrame.LookVector*flyspd end
+if UserInputService:IsKeyDown(Enum.KeyCode.S)then bv.Velocity=-root.CFrame.LookVector*flyspd end
+if UserInputService:IsKeyDown(Enum.KeyCode.A)then bv.Velocity=-root.CFrame.RightVector*flyspd end
+if UserInputService:IsKeyDown(Enum.KeyCode.D)then bv.Velocity=root.CFrame.RightVector*flyspd end
+if UserInputService:IsKeyDown(Enum.KeyCode.Space)then bv.Velocity=Vector3.new(0,flyspd,0)end
+if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)then bv.Velocity=Vector3.new(0,-flyspd,0)end
+bg.CFrame=CFrame.new(root.Position,root.Position+Workspace.CurrentCamera.CFrame.LookVector)
+else
+hum.PlatformStand=false
+if bv then bv:Destroy()bv=nil end
+if bg then bg:Destroy()bg=nil end
+end
+
+hum.WalkSpeed=toggles["超级加速"] and 32 or 16
+hum.JumpPower=toggles["无限跳"] and 100 or 50
+
+if toggles["穿墙无碰撞"] then
+for _,v in pairs(char:GetDescendants())do
+if v:IsA("BasePart")then v.CanCollide=false end
+end
+else
+for _,v in pairs(char:GetDescendants())do
+if v:IsA("BasePart")then v.CanCollide=true end
+end
+end
 end)
 
 for _,v in pairs(sg:GetDescendants())do
@@ -318,9 +402,3 @@ v.Active=true
 v.ZIndex=999
 end
 end
-
-StarterGui:SetCore("SendNotification",{
-Title="Stellarlight-script",
-Text="加载成功 | 悬浮球可拖动",
-Duration=3
-})
