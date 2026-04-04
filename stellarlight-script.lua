@@ -19,6 +19,7 @@ sg.Name="Stellarlight"
 sg.Parent=CoreGui
 sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 sg.ResetOnSpawn=false
+sg.IgnoreGuiInset=true
 
 local logo=Instance.new("Frame")
 logo.Size=UDim2.new(0,100,0,100)
@@ -105,6 +106,12 @@ Float.BackgroundColor3=Color3.new(0.08,0.08,0.08)
 Float.Rotation=15
 Float.Draggable=true
 Float.Active=true
+
+local FloatBtn=Instance.new("TextButton")
+FloatBtn.Size=UDim2.new(1,0,1,0)
+FloatBtn.BackgroundTransparency=1
+FloatBtn.Text=""
+FloatBtn.Parent=Float
 
 local flab=Instance.new("TextLabel")
 flab.Size=UDim2.new(1,0,1,0)
@@ -341,7 +348,7 @@ Btn("关闭GUI",function()Main.Visible=false end)
 Btn("重置位置",function()Main.Position=UDim2.new(0.5,-300,0.5,-210) end)
 Btn("自杀",function()if LocalPlayer.Character then LocalPlayer.Character:FindFirstChild("Humanoid").Health=0 end end)
 
-Float.MouseButton1Click:Connect(function()
+FloatBtn.MouseButton1Click:Connect(function()
 Main.Visible=not Main.Visible
 end)
 
