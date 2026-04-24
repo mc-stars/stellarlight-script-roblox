@@ -2,8 +2,10 @@ local Players=game:GetService("Players")
 local UIS=game:GetService("UserInputService")
 local TweenService=game:GetService("TweenService")
 local RunService=game:GetService("RunService")
+local Workspace=game:GetService("Workspace")
 local LocalPlayer=Players.LocalPlayer
 local PlayerGui=LocalPlayer:WaitForChild("PlayerGui")
+local Camera=Workspace:WaitForChild("CurrentCamera")
 local Colors={
     Background=Color3.fromHex("#1A1E23"),
     Sidebar=Color3.fromHex("#21262D"),
@@ -401,7 +403,7 @@ local function CreateToggle(name,default,callback)
         Checkbox.BackgroundColor3=Toggles[name] and Colors.Checkbox or Colors.CheckboxUnchecked
         Checkmark.Visible=Toggles[name]
         Item.BackgroundColor3=Toggles[name] and Colors.AccentDark or Colors.Card
-        if callback then callback(Toggles[name]) end
+        if callback then pcall(callback,Toggles[name]) end
     end)
     return Item
 end
@@ -588,49 +590,53 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 coroutine.wrap(function()
-    for i=1,100 do
-        ProgressFill.Size=UDim2.new(i/100,0,1,0)
-        LoadingLogo.Rotation=i*3.6
-        task.wait(0.015)
-    end
-    LoadingText.Text=CurrentLang.Loaded
-    task.wait(0.5)
-    TweenService:Create(LoadingScreen,TweenInfo.new(0.8),{BackgroundTransparency=1}):Play()
-    TweenService:Create(LoadingLogo,TweenInfo.new(0.8),{Transparency=1}):Play()
-    TweenService:Create(LoadingText,TweenInfo.new(0.8),{Transparency=1}):Play()
-    TweenService:Create(ProgressBar,TweenInfo.new(0.8),{Transparency=1}):Play()
-    task.wait(0.8)
-    LoadingScreen:Destroy()
-    ToggleButton.Visible=true
+    pcall(function()
+        for i=1,100 do
+            ProgressFill.Size=UDim2.new(i/100,0,1,0)
+            LoadingLogo.Rotation=i*3.6
+            task.wait(0.02)
+        end
+        LoadingText.Text=CurrentLang.Loaded
+        task.wait(0.5)
+        TweenService:Create(LoadingScreen,TweenInfo.new(0.8),{BackgroundTransparency=1}):Play()
+        TweenService:Create(LoadingLogo,TweenInfo.new(0.8),{Transparency=1}):Play()
+        TweenService:Create(LoadingText,TweenInfo.new(0.8),{Transparency=1}):Play()
+        TweenService:Create(ProgressBar,TweenInfo.new(0.8),{Transparency=1}):Play()
+        task.wait(0.8)
+        LoadingScreen:Destroy()
+        ToggleButton.Visible=true
+    end)
 end)()
 RunService.RenderStepped:Connect(function()
-    local char=LocalPlayer.Character
-    if not char then return end
-    local root=char:FindFirstChild("HumanoidRootPart")
-    local hum=char:FindFirstChild("Humanoid")
-    if not root or not hum then return end
-    if Toggles.Fly then
-        local bv=root:FindFirstChild("ST_Fly")
-        local bg=root:FindFirstChild("ST_FlyGyro")
-        if bv and bg then
-            bv.Velocity=Vector3.new(0,0,0)
-            if UIS:IsKeyDown(Enum.KeyCode.W)then bv.Velocity=root.CFrame.LookVector*60 end
-            if UIS:IsKeyDown(Enum.KeyCode.S)then bv.Velocity=-root.CFrame.LookVector*60 end
-            if UIS:IsKeyDown(Enum.KeyCode.A)then bv.Velocity=-root.CFrame.RightVector*60 end
-            if UIS:IsKeyDown(Enum.KeyCode.D)then bv.Velocity=root.CFrame.RightVector*60 end
-            if UIS:IsKeyDown(Enum.KeyCode.Space)then bv.Velocity=Vector3.new(0,60,0)end
-            if UIS:IsKeyDown(Enum.KeyCode.LeftControl)then bv.Velocity=Vector3.new(0,-60,0)end
-            bg.CFrame=CFrame.new(root.Position,root.Position+Workspace.CurrentCamera.CFrame.LookVector)
+    pcall(function()
+        local char=LocalPlayer.Character
+        if not char then return end
+        local root=char:FindFirstChild("HumanoidRootPart")
+        local hum=char:FindFirstChild("Humanoid")
+        if not root or not hum then return end
+        if Toggles.Fly then
+            local bv=root:FindFirstChild("ST_Fly")
+            local bg=root:FindFirstChild("ST_FlyGyro")
+            if bv and bg then
+                bv.Velocity=Vector3.new(0,0,0)
+                if UIS:IsKeyDown(Enum.KeyCode.W)then bv.Velocity=root.CFrame.LookVector*60 end
+                if UIS:IsKeyDown(Enum.KeyCode.S)then bv.Velocity=-root.CFrame.LookVector*60 end
+                if UIS:IsKeyDown(Enum.KeyCode.A)then bv.Velocity=-root.CFrame.RightVector*60 end
+                if UIS:IsKeyDown(Enum.KeyCode.D)then bv.Velocity=root.CFrame.RightVector*60 end
+                if UIS:IsKeyDown(Enum.KeyCode.Space)then bv.Velocity=Vector3.new(0,60,0)end
+                if UIS:IsKeyDown(Enum.KeyCode.LeftControl)then bv.Velocity=Vector3.new(0,-60,0)end
+                bg.CFrame=CFrame.new(root.Position,root.Position+Camera.CFrame.LookVector)
+            end
         end
-    end
-    hum.WalkSpeed=Toggles.WalkSpeed and 50 or 16
-    hum.JumpPower=Toggles.JumpPower and 150 or 50
-    if Toggles.InfiniteJump then hum.JumpPower=150 end
-    if Toggles.NoFall then hum.FallDamagePerSecond=0 end
-    if Toggles.GodMode then hum.Health=hum.MaxHealth end
-    if Toggles.Noclip then
-        for _,v in pairs(char:GetDescendants())do
-            if v:IsA("BasePart")then v.CanCollide=false end
+        hum.WalkSpeed=Toggles.WalkSpeed and 50 or 16
+        hum.JumpPower=Toggles.JumpPower and 150 or 50
+        if Toggles.InfiniteJump then hum.JumpPower=150 end
+        if Toggles.NoFall then hum.FallDamagePerSecond=0 end
+        if Toggles.GodMode then hum.Health=hum.MaxHealth end
+        if Toggles.Noclip then
+            for _,v in pairs(char:GetDescendants())do
+                if v:IsA("BasePart")then v.CanCollide=false end
+            end
         end
-    end
+    end)
 end)
