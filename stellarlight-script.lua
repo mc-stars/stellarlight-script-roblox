@@ -1,11 +1,13 @@
 repeat task.wait() until game:IsLoaded()
 repeat task.wait() until game.Players.LocalPlayer.PlayerGui
 repeat task.wait() until workspace.CurrentCamera
+local AdminPassword="stellarlight_1949"
 local Players=game:GetService("Players")
 local UIS=game:GetService("UserInputService")
 local TweenService=game:GetService("TweenService")
 local RunService=game:GetService("RunService")
 local Workspace=game:GetService("Workspace")
+local VirtualInputManager=game:GetService("VirtualInputManager")
 local LocalPlayer=Players.LocalPlayer
 local PlayerGui=LocalPlayer.PlayerGui
 local Camera=Workspace.CurrentCamera
@@ -19,11 +21,16 @@ local Colors={
     TextSecondary=Color3.fromHex("#8B949E"),
     Border=Color3.fromHex("#30363D"),
     Checkbox=Color3.fromHex("#2ECC71"),
-    CheckboxUnchecked=Color3.fromHex("#484F58")
+    CheckboxUnchecked=Color3.fromHex("#484F58"),
+    Error=Color3.fromHex("#E74C3C")
 }
 local Lang={
     CN={
-        Logo="Stellarlight",
+        Logo="Stellarlight Admin",
+        PasswordTitle="管理员验证",
+        PasswordPlaceholder="请输入管理员密码",
+        PasswordConfirm="确认",
+        PasswordError="密码错误",
         Player="玩家",
         Visual="视觉",
         Game="游戏",
@@ -36,7 +43,7 @@ local Lang={
         JumpPower="跳跃高度",
         InfiniteJump="无限跳",
         NoFall="无摔落伤害",
-        GodMode="无敌",
+        GodMode="无敌(本地)",
         ESP="全局透视",
         ESPName="显示名字",
         ESPHealth="显示血量",
@@ -51,22 +58,116 @@ local Lang={
         HitboxExpander="命中盒扩大",
         AutoClick="自动点击",
         AutoCollect="自动收集",
-        TimeSpeed="时间加速",
-        WeatherControl="天气控制",
+        TimeSpeed="时间加速(本地)",
+        WeatherControl="天气控制(本地)",
         RemoveFog="移除迷雾",
         Language="语言切换",
         ResetUI="重置UI位置",
         Unload="卸载脚本",
-        Loading="正在加载 Stellarlight",
+        Loading="正在加载管理员菜单",
         Loaded="加载完成"
     }
 }
 local CurrentLang=Lang.CN
+local ESPObjects={}
+local AutoClickLoop=nil
+local AutoCollectLoop=nil
+local TimeSpeedLoop=nil
+local OriginalHitboxes={}
+local OriginalLighting={
+    Brightness=game.Lighting.Brightness,
+    Contrast=game.Lighting.Contrast,
+    FogEnd=game.Lighting.FogEnd,
+    FogStart=game.Lighting.FogStart,
+    NightVision=game.Lighting.NightVision
+}
 local ScreenGui=Instance.new("ScreenGui")
-ScreenGui.Name="Stellarlight"
+ScreenGui.Name="StellarlightAdmin"
 ScreenGui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 ScreenGui.ResetOnSpawn=false
 ScreenGui.Parent=PlayerGui
+local PasswordFrame=Instance.new("Frame")
+PasswordFrame.Size=UDim2.new(0,350,0,200)
+PasswordFrame.Position=UDim2.new(0.5,-175,0.5,-100)
+PasswordFrame.BackgroundColor3=Colors.Background
+PasswordFrame.BorderSizePixel=0
+PasswordFrame.Parent=ScreenGui
+local PasswordCorner=Instance.new("UICorner")
+PasswordCorner.CornerRadius=UDim.new(0,12)
+PasswordCorner.Parent=PasswordFrame
+local PasswordTitle=Instance.new("TextLabel")
+PasswordTitle.Size=UDim2.new(1,0,0,30)
+PasswordTitle.Position=UDim2.new(0,0,0,30)
+PasswordTitle.BackgroundTransparency=1
+PasswordTitle.Text=CurrentLang.PasswordTitle
+PasswordTitle.TextColor3=Colors.Text
+PasswordTitle.TextSize=22
+PasswordTitle.Font=Enum.Font.GothamBold
+PasswordTitle.Parent=PasswordFrame
+local PasswordInput=Instance.new("TextBox")
+PasswordInput.Size=UDim2.new(0,280,0,45)
+PasswordInput.Position=UDim2.new(0.5,-140,0.5,-10)
+PasswordInput.BackgroundColor3=Colors.Card
+PasswordInput.BorderSizePixel=0
+PasswordInput.Text=""
+PasswordInput.PlaceholderText=CurrentLang.PasswordPlaceholder
+PasswordInput.PlaceholderColor3=Colors.TextSecondary
+PasswordInput.TextColor3=Colors.Text
+PasswordInput.TextSize=16
+PasswordInput.Font=Enum.Font.Gotham
+PasswordInput.ClearTextOnFocus=false
+PasswordInput.Parent=PasswordFrame
+local InputCorner=Instance.new("UICorner")
+InputCorner.CornerRadius=UDim.new(0,8)
+InputCorner.Parent=PasswordInput
+local InputPadding=Instance.new("UIPadding")
+InputPadding.PaddingLeft=UDim.new(0,15)
+InputPadding.Parent=PasswordInput
+local ConfirmButton=Instance.new("TextButton")
+ConfirmButton.Size=UDim2.new(0,280,0,45)
+ConfirmButton.Position=UDim2.new(0.5,-140,0.5,40)
+ConfirmButton.BackgroundColor3=Colors.Accent
+ConfirmButton.BorderSizePixel=0
+ConfirmButton.Text=CurrentLang.PasswordConfirm
+ConfirmButton.TextColor3=Colors.Text
+ConfirmButton.TextSize=16
+ConfirmButton.Font=Enum.Font.GothamBold
+ConfirmButton.AutoButtonColor=false
+ConfirmButton.Parent=PasswordFrame
+local ButtonCorner=Instance.new("UICorner")
+ButtonCorner.CornerRadius=UDim.new(0,8)
+ButtonCorner.Parent=ConfirmButton
+local ErrorText=Instance.new("TextLabel")
+ErrorText.Size=UDim2.new(1,0,0,20)
+ErrorText.Position=UDim2.new(0,0,0.5,85)
+ErrorText.BackgroundTransparency=1
+ErrorText.Text=""
+ErrorText.TextColor3=Colors.Error
+ErrorText.TextSize=14
+ErrorText.Font=Enum.Font.Gotham
+ErrorText.Visible=false
+ErrorText.Parent=PasswordFrame
+local function VerifyPassword()
+    if PasswordInput.Text==AdminPassword then
+        TweenService:Create(PasswordFrame,TweenInfo.new(0.5),{Transparency=1}):Play()
+        TweenService:Create(PasswordTitle,TweenInfo.new(0.5),{Transparency=1}):Play()
+        TweenService:Create(PasswordInput,TweenInfo.new(0.5),{Transparency=1}):Play()
+        TweenService:Create(ConfirmButton,TweenInfo.new(0.5),{Transparency=1}):Play()
+        task.wait(0.5)
+        PasswordFrame:Destroy()
+    else
+        ErrorText.Text=CurrentLang.PasswordError
+        ErrorText.Visible=true
+        task.wait(2)
+        ErrorText.Visible=false
+        PasswordInput.Text=""
+    end
+end
+ConfirmButton.MouseButton1Click:Connect(VerifyPassword)
+PasswordInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed then VerifyPassword() end
+end)
+repeat task.wait() until not PasswordFrame.Parent
 local ToggleButton=Instance.new("TextButton")
 ToggleButton.Name="ToggleButton"
 ToggleButton.Size=UDim2.new(0,50,0,50)
@@ -306,6 +407,12 @@ local function ClearFunctions()
         if v:IsA("Frame")then v:Destroy()end
     end
 end
+local function ClearESP()
+    for _,v in pairs(ESPObjects)do
+        if v and v.Parent then v:Destroy()end
+    end
+    ESPObjects={}
+end
 local function LoadPlayerTab()
     ClearFunctions()
     CreateToggle("Fly",false,function(v)
@@ -339,19 +446,23 @@ local function LoadPlayerTab()
 end
 local function LoadVisualTab()
     ClearFunctions()
-    CreateToggle("ESP",false)
+    CreateToggle("ESP",false,function(v)
+        if not v then ClearESP()end
+    end)
     CreateToggle("ESPName",true)
     CreateToggle("ESPHealth",true)
     CreateToggle("ESPDistance",true)
     CreateToggle("ESPBox",true)
     CreateToggle("Fullbright",false,function(v)
-        game.Lighting.Brightness=v and 3 or 1
-        game.Lighting.Contrast=v and 0.5 or 0
+        game.Lighting.Brightness=v and 3 or OriginalLighting.Brightness
+        game.Lighting.Contrast=v and 0.5 or OriginalLighting.Contrast
     end)
     CreateToggle("NoFog",false,function(v)
-        game.Lighting.FogEnd=v and 1e5 or 1000
+        game.Lighting.FogEnd=v and 1e5 or OriginalLighting.FogEnd
     end)
-    CreateToggle("NightVision",false)
+    CreateToggle("NightVision",false,function(v)
+        game.Lighting.NightVision=v and 1 or OriginalLighting.NightVision
+    end)
     FunctionList.CanvasSize=UDim2.new(0,0,0,ListLayout.AbsoluteContentSize.Y)
 end
 local function LoadGameTab()
@@ -359,16 +470,75 @@ local function LoadGameTab()
     CreateToggle("Aimbot",false)
     CreateToggle("NoRecoil",false)
     CreateToggle("FastShoot",false)
-    CreateToggle("HitboxExpander",false)
+    CreateToggle("HitboxExpander",false,function(v)
+        if not v then
+            for _,player in pairs(Players:GetPlayers())do
+                if player==LocalPlayer then continue end
+                local pchar=player.Character
+                if not pchar then continue end
+                local proot=pchar:FindFirstChild("HumanoidRootPart")
+                if proot and OriginalHitboxes[player.UserId]then
+                    proot.Size=OriginalHitboxes[player.UserId]
+                end
+            end
+            OriginalHitboxes={}
+        end
+    end)
     FunctionList.CanvasSize=UDim2.new(0,0,0,ListLayout.AbsoluteContentSize.Y)
 end
 local function LoadToolsTab()
     ClearFunctions()
-    CreateToggle("AutoClick",false)
-    CreateToggle("AutoCollect",false)
-    CreateToggle("TimeSpeed",false)
-    CreateToggle("WeatherControl",false)
-    CreateToggle("RemoveFog",false)
+    CreateToggle("AutoClick",false,function(v)
+        if v then
+            AutoClickLoop=coroutine.wrap(function()
+                while Toggles.AutoClick do
+                    VirtualInputManager:SendMouseButtonEvent(0,0,0,true,game,1)
+                    VirtualInputManager:SendMouseButtonEvent(0,0,0,false,game,1)
+                    task.wait(0.05)
+                end
+            end)()
+        else
+            AutoClickLoop=nil
+        end
+    end)
+    CreateToggle("AutoCollect",false,function(v)
+        if v then
+            AutoCollectLoop=coroutine.wrap(function()
+                while Toggles.AutoCollect do
+                    for _,v in pairs(Workspace:GetChildren())do
+                        if v:IsA("BasePart")and v.Name=="Collect"then
+                            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")then
+                                LocalPlayer.Character.HumanoidRootPart.CFrame=v.CFrame
+                            end
+                            task.wait(0.1)
+                        end
+                    end
+                    task.wait(1)
+                end
+            end)()
+        else
+            AutoCollectLoop=nil
+        end
+    end)
+    CreateToggle("TimeSpeed",false,function(v)
+        if v then
+            TimeSpeedLoop=coroutine.wrap(function()
+                while Toggles.TimeSpeed do
+                    game.Lighting.ClockTime=game.Lighting.ClockTime+0.1
+                    task.wait(0.01)
+                end
+            end)()
+        else
+            TimeSpeedLoop=nil
+        end
+    end)
+    CreateToggle("WeatherControl",false,function(v)
+        game.Lighting.FogStart=v and 0 or OriginalLighting.FogStart
+        game.Lighting.FogEnd=v and 1e5 or OriginalLighting.FogEnd
+    end)
+    CreateToggle("RemoveFog",false,function(v)
+        game.Lighting.FogEnd=v and 1e5 or OriginalLighting.FogEnd
+    end)
     FunctionList.CanvasSize=UDim2.new(0,0,0,ListLayout.AbsoluteContentSize.Y)
 end
 local function LoadSettingsTab()
@@ -407,6 +577,24 @@ local function LoadSettingsTab()
         ToggleButton.Position=UDim2.new(0,20,0.5,-25)
     end)
     CreateToggle("Unload",false,function()
+        ClearESP()
+        AutoClickLoop=nil
+        AutoCollectLoop=nil
+        TimeSpeedLoop=nil
+        for _,player in pairs(Players:GetPlayers())do
+            if player==LocalPlayer then continue end
+            local pchar=player.Character
+            if not pchar then continue end
+            local proot=pchar:FindFirstChild("HumanoidRootPart")
+            if proot and OriginalHitboxes[player.UserId]then
+                proot.Size=OriginalHitboxes[player.UserId]
+            end
+        end
+        game.Lighting.Brightness=OriginalLighting.Brightness
+        game.Lighting.Contrast=OriginalLighting.Contrast
+        game.Lighting.FogEnd=OriginalLighting.FogEnd
+        game.Lighting.FogStart=OriginalLighting.FogStart
+        game.Lighting.NightVision=OriginalLighting.NightVision
         ScreenGui:Destroy()
     end)
     FunctionList.CanvasSize=UDim2.new(0,0,0,ListLayout.AbsoluteContentSize.Y)
@@ -519,6 +707,106 @@ RunService.RenderStepped:Connect(function()
         if Toggles.Noclip then
             for _,v in pairs(char:GetDescendants())do
                 if v:IsA("BasePart")then v.CanCollide=false end
+            end
+        end
+        if Toggles.ESP then
+            ClearESP()
+            for _,player in pairs(Players:GetPlayers())do
+                if player==LocalPlayer then continue end
+                local pchar=player.Character
+                if not pchar then continue end
+                local proot=pchar:FindFirstChild("HumanoidRootPart")
+                local phum=pchar:FindFirstChild("Humanoid")
+                if not proot or not phum then continue end
+                local gui=Instance.new("BillboardGui")
+                gui.AlwaysOnTop=true
+                gui.Size=UDim2.new(4,0,5,0)
+                gui.StudsOffset=Vector3.new(0,3,0)
+                gui.Parent=proot
+                local name=Instance.new("TextLabel")
+                name.BackgroundTransparency=1
+                name.Text=player.Name
+                name.TextColor3=Color3.new(1,1,1)
+                name.TextSize=14
+                name.Font=Enum.Font.GothamBold
+                name.Size=UDim2.new(1,0,0,16)
+                name.Position=UDim2.new(0,0,0,0)
+                name.Visible=Toggles.ESPName
+                name.Parent=gui
+                local health=Instance.new("TextLabel")
+                health.BackgroundTransparency=1
+                health.Text=math.floor(phum.Health).."/"..phum.MaxHealth
+                health.TextColor3=Color3.new(0,1,0)
+                health.TextSize=12
+                health.Size=UDim2.new(1,0,0,14)
+                health.Position=UDim2.new(0,0,0,16)
+                health.Visible=Toggles.ESPHealth
+                health.Parent=gui
+                local dist=Instance.new("TextLabel")
+                dist.BackgroundTransparency=1
+                dist.Text=math.floor((root.Position-proot.Position).Magnitude).."m"
+                dist.TextColor3=Color3.new(1,1,0)
+                dist.TextSize=12
+                dist.Size=UDim2.new(1,0,0,14)
+                dist.Position=UDim2.new(0,0,0,30)
+                dist.Visible=Toggles.ESPDistance
+                dist.Parent=gui
+                table.insert(ESPObjects,gui)
+                if Toggles.ESPBox then
+                    local box=Instance.new("BoxHandleAdornment")
+                    box.Size=proot.Size+Vector3.new(2,4,2)
+                    box.Color3=Color3.new(1,0,0)
+                    box.Transparency=0.5
+                    box.AlwaysOnTop=true
+                    box.Adornee=proot
+                    box.Parent=proot
+                    table.insert(ESPObjects,box)
+                end
+            end
+        end
+        if Toggles.Aimbot and UIS:IsMouseButtonDown(Enum.UserInputType.MouseButton2)then
+            local closest=nil
+            local dist=math.huge
+            for _,player in pairs(Players:GetPlayers())do
+                if player==LocalPlayer then continue end
+                local pchar=player.Character
+                if not pchar then continue end
+                local head=pchar:FindFirstChild("Head")
+                if not head then continue end
+                local d=(root.Position-head.Position).Magnitude
+                if d<dist then
+                    dist=d
+                    closest=head
+                end
+            end
+            if closest then
+                Camera.CFrame=CFrame.new(Camera.CFrame.Position,closest.Position)
+            end
+        end
+        if Toggles.NoRecoil then
+            local tool=char:FindFirstChildOfClass("Tool")
+            if tool then
+                tool:SetAttribute("Recoil",0)
+            end
+        end
+        if Toggles.FastShoot then
+            local tool=char:FindFirstChildOfClass("Tool")
+            if tool then
+                tool:SetAttribute("FireRate",0.01)
+            end
+        end
+        if Toggles.HitboxExpander then
+            for _,player in pairs(Players:GetPlayers())do
+                if player==LocalPlayer then continue end
+                local pchar=player.Character
+                if not pchar then continue end
+                local proot=pchar:FindFirstChild("HumanoidRootPart")
+                if proot then
+                    if not OriginalHitboxes[player.UserId]then
+                        OriginalHitboxes[player.UserId]=proot.Size
+                    end
+                    proot.Size=Vector3.new(5,5,5)
+                end
             end
         end
     end)
